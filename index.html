@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Day Countdown</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            margin: 0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        #title {
+            font-size: 3em;
+            color: white;
+            margin-bottom: 20px;
+            z-index: 2;
+        }
+        #countdown {
+            font-size: 2em;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            z-index: 2;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">Presidential Election 2024</div>
+    <canvas id="fireworks"></canvas>
+    <div id="countdown">Loading...</div>
+
+    <script>
+        function countdownToElectionDay() {
+            const electionDay = new Date("November 5, 2024 00:00:00").getTime();
+            const now = new Date().getTime();
+            const timeLeft = electionDay - now;
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById("countdown").innerHTML = 
+                `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        countdownToElectionDay();
+        setInterval(countdownToElectionDay, 1000);
+
+        // Fireworks effect
+        const canvas = document.getElementById('fireworks');
+        const ctx = canvas.getContext('2d');
+        const fireworks = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Firework {
+            constructor(x, y, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetY = targetY;
+                this.velY = -5 - Math.random() * 5;
+                this.exploded = false;
+                this.particles = [];
+                this.color = this.getRandomColor();
+            }
+
+            update() {
+                if (!this.exploded) {
+                    this.y += this.velY;
+                    if (this.y <= this.targetY) {
+                        this.exploded = true;
+                        this.createParticles();
+                    }
+                }
+                this.particles.forEach(p => p.update());
+            }
+
+            draw() {
+                if (!this.exploded) {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, 3, 3);
+                }
+                this.particles.forEach(p => p.draw());
+            }
+
+            createParticles() {
+                const numParticles = 50;
+                for (let i = 0; i < numParticles; i++) {
+                    this.particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+
+            getRandomColor() {
+                const colors = ['red', 'white', 'blue'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.velX = (Math.random() - 0.5) * 10;
+                this.velY = (Math.random() - 0.5) * 10;
+                this.alpha = 1;
+                this.color = color;
+            }
+
+            update() {
+                this.x += this.velX;
+                this.y += this.velY;
+                this.alpha -= 0.02;
+            }
+
+            draw() {
+                if (this.alpha > 0) {
+                    ctx.fillStyle = `rgba(${this.getColorValues(this.color)}, ${this.alpha})`;
+                    ctx.fillRect(this.x, this.y, 2, 2);
+                }
+            }
+
+            getColorValues(color) {
+                switch(color) {
+                    case 'red':
+                        return '255, 0, 0';
+                    case 'white':
+                        return '255, 255, 255';
+                    case 'blue':
+                        return '0, 0, 255';
+                    default:
+                        return '255, 255, 255';
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            fireworks.forEach((f, index) => {
+                f.update();
+                f.draw();
+                if (f.exploded && f.particles.every(p => p.alpha <= 0)) {
+                    fireworks.splice(index, 1);
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+
+        function launchFirework() {
+            const x = Math.random() * canvas.width;
+            const targetY = Math.random() * canvas.height / 2;
+            fireworks.push(new Firework(x, canvas.height, targetY));
+        }
+
+        setInterval(launchFirework, 800);
+        animate();
+    </script>
+</body>
+</html>
+
+
+
